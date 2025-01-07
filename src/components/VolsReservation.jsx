@@ -175,7 +175,7 @@ const VolsReservation = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: totalPrice * 100,
+          amount: totalPrice * 1,
           currency: "mad",
           description: `Réservation vol ${flight.villeDepart} → ${flight.villeArrivee}`,
         }),
