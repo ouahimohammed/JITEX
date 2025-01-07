@@ -1,5 +1,4 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
@@ -12,10 +11,17 @@ import {
   ListItemText,
   Divider,
   Stack,
+  CircularProgress,
 } from '@mui/material';
-import { Download, Check } from '@mui/icons-material';
+import { Download, Check, CreditCard } from '@mui/icons-material';
 import { jsPDF } from 'jspdf';
 import { styled } from '@mui/material/styles';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import StripePayment from './StripePayment';
+
+// Load Stripe outside of component to avoid recreating Stripe object on every render
+const stripePromise = loadStripe('your_stripe_publishable_key_here');
 
 const StyledPaper = styled(Paper)({
   padding: '24px',
@@ -31,6 +37,10 @@ const StyledPaper = styled(Paper)({
 const VolsReservation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [showStripePayment, setShowStripePayment] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const flight = useSelector((state) =>
     state.vols.list.find((vol) => vol.id === id)
@@ -157,9 +167,39 @@ const VolsReservation = () => {
     // Save the PDF
     doc.save(`JETEX_Invoice_${flight.id}.pdf`);
   };
-  const handleConfirm = () => {
-    alert('Réservation confirmée avec succès !');
-    navigate('/');
+
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:3000/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: totalPrice * 100,
+          currency: "mad",
+          description: `Réservation vol ${flight.villeDepart} → ${flight.villeArrivee}`,
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret);
+        setShowStripePayment(true);
+      } else {
+        alert("Erreur lors de la création du paiement. Veuillez réessayer.");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la confirmation :", error);
+      alert("Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setIsConfirmed(true);
+    setShowStripePayment(false);
   };
 
   return (
@@ -223,32 +263,61 @@ const VolsReservation = () => {
           </ListItem>
         </List>
 
-        <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-          <Button
-            variant="contained"
-            fullWidth
-            startIcon={<Check />}
-            sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#45a049' } }}
-            onClick={handleConfirm}
-          >
-            Confirmer la réservation
-          </Button>
-          <Button
-            variant="contained"
-            fullWidth
-            startIcon={<Download />}
-            onClick={handlePrint}
-            sx={{
-              bgcolor: '#2196f3',
-              '&:hover': { bgcolor: '#1976d2' },
-            }}
-          >
-            Imprimer le reçu
-          </Button>
-        </Stack>
+        {showStripePayment && clientSecret ? (
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <StripePayment 
+              onSuccess={handlePaymentSuccess}
+              totalPrice={totalPrice}
+              flight={flight}
+            />
+          </Elements>
+        ) : (
+          <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+            {!isConfirmed ? (
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={isLoading ? <CircularProgress size={24} color="inherit" /> : <CreditCard />}
+                sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#45a049' } }}
+                onClick={handleConfirm}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Chargement...' : 'Procéder au paiement'}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<Download />}
+                  onClick={handlePrint}
+                  sx={{
+                    bgcolor: '#2196f3',
+                    '&:hover': { bgcolor: '#1976d2' },
+                  }}
+                >
+                  Imprimer le reçu
+                </Button>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => navigate('/')}
+                  sx={{
+                    color: '#2196f3',
+                    borderColor: '#2196f3',
+                    '&:hover': { bgcolor: 'rgba(33, 150, 243, 0.04)' },
+                  }}
+                >
+                  Retour à l'accueil
+                </Button>
+              </>
+            )}
+          </Stack>
+        )}
       </StyledPaper>
     </Box>
   );
 };
 
 export default VolsReservation;
+

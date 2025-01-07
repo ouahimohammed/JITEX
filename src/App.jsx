@@ -5,9 +5,9 @@ import Layout from './components/Layout';
 import VolsList from './components/VolsList';
 import VolsDetails from './components/VolsDetails';
 import VolsReservation from './components/VolsReservation';
-import Footer from './components/Footer'
+import Footer from './components/Footer';
+import StripePaymentWrapper from './components/StripePayment';
 import React from 'react';
-import ReactDOM from 'react-dom/client';
 
 function App() {
   return (
@@ -18,6 +18,7 @@ function App() {
             <Route index element={<VolsList />} />
             <Route path="flight/:id" element={<VolsDetails />} />
             <Route path="reservation/:id" element={<VolsReservation />} />
+            <Route path="/payment" element={<StripePaymentWrapper />} />
           </Route>
         </Routes>
       </Router>
@@ -27,4 +28,3 @@ function App() {
 }
 
 export default App;
-
