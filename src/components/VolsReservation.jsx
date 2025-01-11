@@ -21,7 +21,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import StripePayment from './StripePayment';
 
 // Load Stripe outside of component to avoid recreating Stripe object on every render
-const stripePromise = loadStripe('your_stripe_publishable_key_here');
+const stripePromise = loadStripe('pk_test_51QeNOfQGxVOBb8nPjIuoMIqD9VmEIySDJaPl65DNY8o36mLbK85nx6quIXbplhwoykp8eAvmyRVv1WfTClwBRfZp00x5zxvlq4');
 
 const StyledPaper = styled(Paper)({
   padding: '24px',
