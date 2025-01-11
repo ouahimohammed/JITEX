@@ -3,6 +3,7 @@ import { CardElement, useStripe, useElements, Elements } from "@stripe/react-str
 import { Box, Button, Typography, TextField, Paper, CircularProgress } from "@mui/material";
 import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
+import {VolsReservation} from './VolsReservation';
 
 // Chargez votre clé publique Stripe ici
 const stripePromise = loadStripe('pk_test_51QeNOfQGxVOBb8nPjIuoMIqD9VmEIySDJaPl65DNY8o36mLbK85nx6quIXbplhwoykp8eAvmyRVv1WfTClwBRfZp00x5zxvlq4'); // Remplacez par votre clé publique
@@ -35,7 +36,7 @@ const StripePayment = ({ clientSecret, onSuccess, totalPrice, flight }) => {
       const response = await axios.post('http://localhost:3000/api/checkout', {
         amount: totalPrice,
         currency: 'mad', // Vous pouvez ajuster la devise si nécessaire
-        description: 'Vol réservé',
+        description: `Réservation vol ${flight.villeDepart} → ${flight.villeArrivee}`,
         fullName: fullName, // Nom complet de l'utilisateur
       });
 
